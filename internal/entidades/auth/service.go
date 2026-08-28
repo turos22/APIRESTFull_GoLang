@@ -31,13 +31,13 @@ func NewService(repo *repo.Queries, db *pgxpool.Pool) Service {
 
 func (s *svc) Register(ctx context.Context, params CreateUserParams) (repo.User, error) {
 
-	if len(strings.TrimSpace(params.email)) == 0 {
+	if len(strings.TrimSpace(params.Name)) == 0 {
 		return repo.User{}, fmt.Errorf("Name is required")
 	}
-	if len(strings.TrimSpace(params.email)) == 0{
+	if len(strings.TrimSpace(params.Email)) == 0{
 		return repo.User{}, fmt.Errorf("Email is required")
 	}
-	if len(strings.TrimSpace(params.password)) == 0{
+	if len(strings.TrimSpace(params.Password)) == 0{
 		return repo.User{}, fmt.Errorf("Senha is required")
 	}
 
@@ -50,10 +50,10 @@ func (s *svc) Register(ctx context.Context, params CreateUserParams) (repo.User,
 	qtx := s.repo.WithTx(tx)
 	
 	Usuario, err := qtx.Register(ctx, repo.RegisterParams{
-		Email: params.email,
-		Name:  params.name,
-		PasswordHash: params.password,
-		Role: params.role,
+		Email: params.Email,
+		Name:  params.Name,
+		PasswordHash: params.Password,
+		Role: params.Role,
 	})
 	if err != nil {
 		return repo.User{}, err
@@ -66,15 +66,15 @@ func (s *svc) Register(ctx context.Context, params CreateUserParams) (repo.User,
 
 func (s *svc) Login(ctx context.Context, params LoginUserParams) (repo.User, error) {
 	return s.repo.FindUserByEmailPassword(ctx, repo.FindUserByEmailPasswordParams{
-		Email: params.email,
-		PasswordHash: params.password,
+		Email: params.Email,
+		PasswordHash: params.Password,
 	})
 }
 
 func (s *svc) Logout(ctx context.Context, params LoginUserParams) error {
 	usuario, err := s.repo.FindUserByEmailPassword(ctx, repo.FindUserByEmailPasswordParams{
-		Email: params.email,
-		PasswordHash: params.password,
+		Email: params.Email,
+		PasswordHash: params.Password,
 	})
 
 	if err != nil {

@@ -42,11 +42,39 @@ func (h *handler) Register(w http.ResponseWriter, r *http.Request) {
 }
 // auth login
 func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
-	json.Write(w, http.StatusOK, nil)
+	var registro LoginUserParams
+	if err := json.Read(r, &registro); err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	token, err := h.service.Login(r.Context(), registro)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.Write(w, http.StatusOK, token)
 }
 
 // auth logout
 func (h *handler) Logout(w http.ResponseWriter, r *http.Request) {
+	var registro LoginUserParams
+	if err := json.Read(r, &registro); err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err := h.service.Logout(r.Context(), registro)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	json.Write(w, http.StatusOK, nil)
 }
 

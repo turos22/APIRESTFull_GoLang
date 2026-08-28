@@ -12,11 +12,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	"github.com/jackc/pgx/v5/pgxpool"
 	repo "github.com/turos22/APIRESTFull_GoLang/internal/adapters/postgresql/sqlc"
+	"github.com/turos22/APIRESTFull_GoLang/internal/entidades/auth"
 	"github.com/turos22/APIRESTFull_GoLang/internal/entidades/orders"
 	"github.com/turos22/APIRESTFull_GoLang/internal/entidades/products"
-	"github.com/go-chi/cors"
 )
 
 // mount - Metodos de chamada da api
@@ -48,12 +49,24 @@ func (app *application) mount() http.Handler {
 	productsService := products.NewService(repo.New(app.db))
 	productHandler := products.NewHandler(productsService)
 
+	authService := auth.NewService(repo.New(app.db), app.db)
+	authHandler := auth.NewHandler(authService)
+
 	//Gets
 	r.Get("/products", productHandler.ListProducts)
 	r.Get("/product/{id}", productHandler.FindProductById)
 	
-	//Post
+	//Post	
+	r.Post("/auth/register", authHandler.Register)
+	r.Post("/auth/login", authHandler.Register)
+	
+	//Requisicoes com JWT
+	//Gets
+	r.Get("/auth/me", authHandler.Me)
+	//Posts
 	r.Post("/orders", ordersHandler.PlaceOrder)
+	r.Post("/auth/logout", authHandler.Register)
+	
 
 	return r
 }
