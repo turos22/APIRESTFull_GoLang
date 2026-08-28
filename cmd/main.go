@@ -4,8 +4,11 @@ import (
 	"context"
 	"log/slog"
 	"os"
+	"time"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+
+	//"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/turos22/APIRESTFull_GoLang/internal/env"
 )
 
@@ -19,20 +22,28 @@ func main() {
 		},
 	}
 
+	poolcfg, err := pgxpool.ParseConfig(cfg.db.dsn)
+	if err != nil { panic(err) }
+
+	//pool de conexoes para evitar abrir varias conexoes por requisicao, limitando
+	poolcfg.MaxConns        =  int32(env.GetInt("MAX_CONNS", 10))
+	poolcfg.MinConns        =  int32(env.GetInt("MIN_CONNS", 2))
+	poolcfg.MaxConnLifetime = time.Duration(env.GetInt("MAXCONNLIFE", 30)) * time.Minute
+	poolcfg.MaxConnIdleTime = time.Duration(env.GetInt("MAXCONIDLE", 5)) * time.Minute
+
+	pool, err := pgxpool.NewWithConfig(ctx, poolcfg)
+	if err != nil { panic(err) }
+	defer pool.Close()
+
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault((logger))
 
-	conn, err := pgx.Connect(ctx, cfg.db.dsn)
-	if err != nil {
-		panic(err)
-	}
-	defer conn.Close(ctx)
 
 	logger.Info("Connected to database", "dsn", cfg.db.dsn)
 
 	api := application{
 		config: cfg,
-		db: conn,
+		db: pool,
 	}
 	//montar o servidor
 	//Subir o servidor

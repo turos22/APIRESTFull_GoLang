@@ -7,10 +7,61 @@ package repo
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const createOrder = `-- name: CreateOrder :one
+INSERT INTO orders(
+    customer_id
+) VALUES ($1) RETURNING id, customer_id, created_at, status, total_cents
+`
+
+func (q *Queries) CreateOrder(ctx context.Context, customerID int64) (Order, error) {
+	row := q.db.QueryRow(ctx, createOrder, customerID)
+	var i Order
+	err := row.Scan(
+		&i.ID,
+		&i.CustomerID,
+		&i.CreatedAt,
+		&i.Status,
+		&i.TotalCents,
+	)
+	return i, err
+}
+
+const createOrderItem = `-- name: CreateOrderItem :one
+INSERT INTO order_items(order_id, product_id, quantity, price_cents) 
+VALUES ($1, $2, $3, $4) RETURNING id, order_id, product_id, quantity, price_cents
+`
+
+type CreateOrderItemParams struct {
+	OrderID    int64 `json:"order_id"`
+	ProductID  int64 `json:"product_id"`
+	Quantity   int32 `json:"quantity"`
+	PriceCents int32 `json:"price_cents"`
+}
+
+func (q *Queries) CreateOrderItem(ctx context.Context, arg CreateOrderItemParams) (OrderItem, error) {
+	row := q.db.QueryRow(ctx, createOrderItem,
+		arg.OrderID,
+		arg.ProductID,
+		arg.Quantity,
+		arg.PriceCents,
+	)
+	var i OrderItem
+	err := row.Scan(
+		&i.ID,
+		&i.OrderID,
+		&i.ProductID,
+		&i.Quantity,
+		&i.PriceCents,
+	)
+	return i, err
+}
+
 const findProductByID = `-- name: FindProductByID :one
-SELECT id, name, price_in_cents, quantity, created_at FROM products WHERE id = $1
+SELECT id, name, price_in_cents, quantity, created_at, description, image_url, category_id, active, seller_id FROM products WHERE id = $1
 `
 
 func (q *Queries) FindProductByID(ctx context.Context, id int64) (Product, error) {
@@ -22,12 +73,40 @@ func (q *Queries) FindProductByID(ctx context.Context, id int64) (Product, error
 		&i.PriceInCents,
 		&i.Quantity,
 		&i.CreatedAt,
+		&i.Description,
+		&i.ImageUrl,
+		&i.CategoryID,
+		&i.Active,
+		&i.SellerID,
+	)
+	return i, err
+}
+
+const findUserByEmailPassword = `-- name: FindUserByEmailPassword :one
+SELECT id, email, password_hash, name, role, created_at FROM users WHERE email = $1 and password_hash = $2
+`
+
+type FindUserByEmailPasswordParams struct {
+	Email        string `json:"email"`
+	PasswordHash string `json:"password_hash"`
+}
+
+func (q *Queries) FindUserByEmailPassword(ctx context.Context, arg FindUserByEmailPasswordParams) (User, error) {
+	row := q.db.QueryRow(ctx, findUserByEmailPassword, arg.Email, arg.PasswordHash)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.PasswordHash,
+		&i.Name,
+		&i.Role,
+		&i.CreatedAt,
 	)
 	return i, err
 }
 
 const listProducts = `-- name: ListProducts :many
-SELECT id, name, price_in_cents, quantity, created_at FROM products
+SELECT id, name, price_in_cents, quantity, created_at, description, image_url, category_id, active, seller_id FROM products
 `
 
 func (q *Queries) ListProducts(ctx context.Context) ([]Product, error) {
@@ -45,6 +124,11 @@ func (q *Queries) ListProducts(ctx context.Context) ([]Product, error) {
 			&i.PriceInCents,
 			&i.Quantity,
 			&i.CreatedAt,
+			&i.Description,
+			&i.ImageUrl,
+			&i.CategoryID,
+			&i.Active,
+			&i.SellerID,
 		); err != nil {
 			return nil, err
 		}
@@ -54,4 +138,82 @@ func (q *Queries) ListProducts(ctx context.Context) ([]Product, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const me = `-- name: Me :one
+SELECT id, email, password_hash, name, role, created_at FROM users WHERE id = $1
+`
+
+func (q *Queries) Me(ctx context.Context, id int64) (User, error) {
+	row := q.db.QueryRow(ctx, me, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.PasswordHash,
+		&i.Name,
+		&i.Role,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const register = `-- name: Register :one
+INSERT INTO users(email, password_hash, name, role) VALUES ($1, $2, $3, $4) RETURNING id, email, password_hash, name, role, created_at
+`
+
+type RegisterParams struct {
+	Email        string `json:"email"`
+	PasswordHash string `json:"password_hash"`
+	Name         string `json:"name"`
+	Role         string `json:"role"`
+}
+
+func (q *Queries) Register(ctx context.Context, arg RegisterParams) (User, error) {
+	row := q.db.QueryRow(ctx, register,
+		arg.Email,
+		arg.PasswordHash,
+		arg.Name,
+		arg.Role,
+	)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.PasswordHash,
+		&i.Name,
+		&i.Role,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const updateStock = `-- name: UpdateStock :one
+UPDATE products SET quantity = $1 WHERE id = $2 RETURNING id, name, price_in_cents, quantity, created_at
+`
+
+type UpdateStockParams struct {
+	Quantity int32 `json:"quantity"`
+	ID       int64 `json:"id"`
+}
+
+type UpdateStockRow struct {
+	ID           int64              `json:"id"`
+	Name         string             `json:"name"`
+	PriceInCents int32              `json:"price_in_cents"`
+	Quantity     int32              `json:"quantity"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) UpdateStock(ctx context.Context, arg UpdateStockParams) (UpdateStockRow, error) {
+	row := q.db.QueryRow(ctx, updateStock, arg.Quantity, arg.ID)
+	var i UpdateStockRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.PriceInCents,
+		&i.Quantity,
+		&i.CreatedAt,
+	)
+	return i, err
 }

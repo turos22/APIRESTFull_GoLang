@@ -27,7 +27,7 @@ func (h *handler) ListProducts(w http.ResponseWriter, r *http.Request) {
 	}
 
 
-	json.Write(w, http.StatusOK, products)
+	json.Write(w, http.StatusOK, NovaListaRespota(products))
 }
 
 func (h *handler) FindProductById(w http.ResponseWriter, r *http.Request) {
@@ -45,5 +45,5 @@ func (h *handler) FindProductById(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	json.Write(w, http.StatusOK, product)
+	json.Write(w, http.StatusOK, NovaOrdersResposta(product))
 }

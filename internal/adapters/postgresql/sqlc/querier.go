@@ -9,8 +9,14 @@ import (
 )
 
 type Querier interface {
+	CreateOrder(ctx context.Context, customerID int64) (Order, error)
+	CreateOrderItem(ctx context.Context, arg CreateOrderItemParams) (OrderItem, error)
 	FindProductByID(ctx context.Context, id int64) (Product, error)
+	FindUserByEmailPassword(ctx context.Context, arg FindUserByEmailPasswordParams) (User, error)
 	ListProducts(ctx context.Context) ([]Product, error)
+	Me(ctx context.Context, id int64) (User, error)
+	Register(ctx context.Context, arg RegisterParams) (User, error)
+	UpdateStock(ctx context.Context, arg UpdateStockParams) (UpdateStockRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

@@ -1,15 +1,22 @@
 package main
 
 import (
+	"context"
 	"log"
+	"log/slog"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	repo "github.com/turos22/APIRESTFull_GoLang/internal/adapters/postgresql/sqlc"
-	"github.com/turos22/APIRESTFull_GoLang/internal/products"
+	"github.com/turos22/APIRESTFull_GoLang/internal/entidades/orders"
+	"github.com/turos22/APIRESTFull_GoLang/internal/entidades/products"
+	"github.com/go-chi/cors"
 )
 
 // mount - Metodos de chamada da api
@@ -23,14 +30,30 @@ func (app *application) mount() http.Handler {
 	r.Use(middleware.Recoverer) //recover from crashes
 	r.Use(middleware.Timeout(60 * time.Second))
 
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins: []string{"http://localhost:3000"},
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders: []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		AllowCredentials: true,
+	}))
+
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("all good"))
 	})
 
+	//Services e Handlers
+	ordersService := orders.NewService(repo.New(app.db), app.db)
+	ordersHandler := orders.NewHandler(ordersService)
+	
 	productsService := products.NewService(repo.New(app.db))
 	productHandler := products.NewHandler(productsService)
+
+	//Gets
 	r.Get("/products", productHandler.ListProducts)
 	r.Get("/product/{id}", productHandler.FindProductById)
+	
+	//Post
+	r.Post("/orders", ordersHandler.PlaceOrder)
 
 	return r
 }
@@ -45,14 +68,35 @@ func (app *application) run(h http.Handler) error {
 		IdleTimeout:  time.Second,
 	}
 
-	log.Printf("Server has started at addr %s", app.config.addr)
+	//Adicao de Signal para poder finalizar o servidor de forma correta
+    // Criacao de notificacao para interromper
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
-	return srv.ListenAndServe()
+	sair := make(chan os.Signal, 1)
+	go func (){
+		log.Printf("Server has started at addr %s", app.config.addr)
+		if err := srv.ListenAndServe(); err != nil {
+			log.Println(err)
+		}
+		sair <- os.Interrupt
+	}()
+	
+	//Espera alguma notificacaoi para desligar (1- nao subiu, 2- interrompeu)
+	select {
+		case <-sair: slog.Info("Servidor nao subiu")
+		case <-ctx.Done(): slog.Info("Servidor sera finalizado")
+	}
+
+	//cria contexto de 15s para terminar execucoes em background
+	ctxDesligar, cancelar := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancelar()
+	return srv.Shutdown(ctxDesligar)
 }
 
 type application struct {
 	config config
-	db *pgx.Conn
+	db *pgxpool.Pool
 }
 
 type config struct {
