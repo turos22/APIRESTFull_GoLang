@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/crypto/bcrypt"
 	repo "github.com/turos22/APIRESTFull_GoLang/internal/adapters/postgresql/sqlc"
 )
 
@@ -48,11 +49,13 @@ func (s *svc) Register(ctx context.Context, params CreateUserParams) (repo.User,
 	defer tx.Rollback(ctx)
 
 	qtx := s.repo.WithTx(tx)
-	
+
+	senhacomHash, err := bcrypt.GenerateFromPassword([]byte(params.Password), 12)
+
 	Usuario, err := qtx.Register(ctx, repo.RegisterParams{
 		Email: params.Email,
 		Name:  params.Name,
-		PasswordHash: params.Password,
+		PasswordHash: string(senhacomHash),
 		Role: params.Role,
 	})
 	if err != nil {
@@ -65,16 +68,27 @@ func (s *svc) Register(ctx context.Context, params CreateUserParams) (repo.User,
 }
 
 func (s *svc) Login(ctx context.Context, params LoginUserParams) (repo.User, error) {
-	return s.repo.FindUserByEmailPassword(ctx, repo.FindUserByEmailPasswordParams{
+
+	usuario, err := s.repo.FindUserByEmailPassword(ctx, repo.FindUserByEmailPasswordParams{
 		Email: params.Email,
-		PasswordHash: params.Password,
 	})
+
+	if err != nil {
+		return repo.User{}, err
+	}
+	validou := bcrypt.CompareHashAndPassword([]byte(usuario.PasswordHash), []byte(params.Password))
+
+	if validou != nil {
+		return repo.User{}, fmt.Errorf("Usuário ou senha incorretos")
+	}
+
+	return usuario, nil
+	
 }
 
 func (s *svc) Logout(ctx context.Context, params LoginUserParams) error {
 	usuario, err := s.repo.FindUserByEmailPassword(ctx, repo.FindUserByEmailPasswordParams{
 		Email: params.Email,
-		PasswordHash: params.Password,
 	})
 
 	if err != nil {
@@ -82,7 +96,7 @@ func (s *svc) Logout(ctx context.Context, params LoginUserParams) error {
 	}
 
 	if usuario.ID == 0 {
-		return fmt.Errorf("Usuário não encontrado")
+		return fmt.Errorf("Usuário não encontrado")
 	}
 
 	return nil

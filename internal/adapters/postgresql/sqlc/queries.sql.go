@@ -83,16 +83,15 @@ func (q *Queries) FindProductByID(ctx context.Context, id int64) (Product, error
 }
 
 const findUserByEmailPassword = `-- name: FindUserByEmailPassword :one
-SELECT id, email, password_hash, name, role, created_at FROM users WHERE email = $1 and password_hash = $2
+SELECT id, email, password_hash, name, role, created_at FROM users WHERE email = $1
 `
 
 type FindUserByEmailPasswordParams struct {
 	Email        string `json:"email"`
-	PasswordHash string `json:"password_hash"`
 }
 
 func (q *Queries) FindUserByEmailPassword(ctx context.Context, arg FindUserByEmailPasswordParams) (User, error) {
-	row := q.db.QueryRow(ctx, findUserByEmailPassword, arg.Email, arg.PasswordHash)
+	row := q.db.QueryRow(ctx, findUserByEmailPassword, arg.Email)
 	var i User
 	err := row.Scan(
 		&i.ID,

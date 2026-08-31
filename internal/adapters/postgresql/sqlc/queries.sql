@@ -20,7 +20,7 @@ UPDATE products SET quantity = $1 WHERE id = $2 RETURNING id, name, price_in_cen
 INSERT INTO users(email, password_hash, name, role) VALUES ($1, $2, $3, $4) RETURNING *;
 
 -- name: FindUserByEmailPassword :one
-SELECT * FROM users WHERE email = $1 and password_hash = $2;
+SELECT * FROM users WHERE email = $1
 
 -- name: Me :one
 SELECT * FROM users WHERE id = $1;

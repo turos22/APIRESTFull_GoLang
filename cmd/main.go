@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/go-chi/jwtauth/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	//"github.com/jackc/pgx/v5/pgxpool"
@@ -40,10 +41,12 @@ func main() {
 
 
 	logger.Info("Connected to database", "dsn", cfg.db.dsn)
+	jwtauth := jwtauth.New("HS256", []byte("secret"), nil)
 
 	api := application{
 		config: cfg,
 		db: pool,
+		jwt: jwtauth,
 	}
 	//montar o servidor
 	//Subir o servidor
