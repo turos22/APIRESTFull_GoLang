@@ -11,7 +11,7 @@ type ProductResposta struct {
 }
 
 
-func NovaListaRespota (u []repo.Product) []ProductResposta {
+func NovaListaRespota (u []repo.ListProductsRow) []ProductResposta {
 	var items []ProductResposta
 	for _, v := range u {
 		items = append(items, NovaOrdersResposta(v))
@@ -20,7 +20,25 @@ func NovaListaRespota (u []repo.Product) []ProductResposta {
 }
 
 
-func NovaOrdersResposta(u repo.Product) ProductResposta {
+func NovaOrdersResposta(u repo.ListProductsRow) ProductResposta {
+	return ProductResposta{
+		ID          : u.ID,
+		Name        : u.Name,
+		Description : u.Description.String,
+		Price       : int64(u.PriceInCents),
+		Quantity    : u.Quantity,
+	}
+}
+
+
+func NewListProductsRespostas (u []repo.Product) []ProductResposta {
+	var items []ProductResposta
+	for _, v := range u {
+		items = append(items, NewProductResposta(v))
+	}
+	return items
+}
+ func NewProductResposta(u repo.Product) ProductResposta {
 	return ProductResposta{
 		ID          : u.ID,
 		Name        : u.Name,

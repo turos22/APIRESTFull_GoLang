@@ -87,3 +87,15 @@ func (svc *svc) PlaceOrder(ctx context.Context, tempOrder createOrderParams) (re
 	return order, itensOrder, nil
 
 }
+
+func (svc *svc) GetOrderId(ctx context.Context, id int64) (repo.Order, error){
+	return svc.repo.OrdersId(ctx, id)
+}
+
+func (svc *svc) MeOrder(ctx context.Context, id int64) ([]repo.Order, error){
+	return svc.repo.OrdersMe(ctx, id)
+}
+
+func (svc *svc) GetItemsOrder(ctx context.Context, id int64) ([]repo.OrderItem, error){
+	return svc.repo.OrderItemsOrderId(ctx, id)
+}

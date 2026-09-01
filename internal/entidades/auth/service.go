@@ -69,9 +69,7 @@ func (s *svc) Register(ctx context.Context, params CreateUserParams) (repo.User,
 
 func (s *svc) Login(ctx context.Context, params LoginUserParams) (repo.User, error) {
 
-	usuario, err := s.repo.FindUserByEmailPassword(ctx, repo.FindUserByEmailPasswordParams{
-		Email: params.Email,
-	})
+	usuario, err := s.repo.FindUserByEmailPassword(ctx, params.Email)
 
 	if err != nil {
 		return repo.User{}, err
@@ -87,9 +85,7 @@ func (s *svc) Login(ctx context.Context, params LoginUserParams) (repo.User, err
 }
 
 func (s *svc) Logout(ctx context.Context, params LoginUserParams) error {
-	usuario, err := s.repo.FindUserByEmailPassword(ctx, repo.FindUserByEmailPasswordParams{
-		Email: params.Email,
-	})
+	usuario, err := s.repo.FindUserByEmailPassword(ctx, params.Email)
 
 	if err != nil {
 		return err

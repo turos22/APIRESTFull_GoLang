@@ -23,6 +23,9 @@ func NovaOrderItemResposta(u repo.OrderItem) orderItemResposta {
 func NovaOrdersResposta(u repo.Order, i []repo.OrderItem) OrdersResposta {
 	var items []orderItemResposta
 	for _, v := range i {
+		if v.OrderID != u.ID {
+			continue
+		}
 		items = append(items, NovaOrderItemResposta(v))
 	}
 	return OrdersResposta{
@@ -30,4 +33,11 @@ func NovaOrdersResposta(u repo.Order, i []repo.OrderItem) OrdersResposta {
 		CustomerID: u.CustomerID,
 		Items:      items,
 	}
+}
+func NovaListaOrdersResposta(u []repo.Order, i []repo.OrderItem) []OrdersResposta {
+	var items []OrdersResposta
+	for _, v := range u {
+		items = append(items, NovaOrdersResposta(v, i))
+	}
+	return items
 }

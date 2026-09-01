@@ -6,16 +6,25 @@ package repo
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
 	CreateOrder(ctx context.Context, customerID int64) (Order, error)
 	CreateOrderItem(ctx context.Context, arg CreateOrderItemParams) (OrderItem, error)
+	CreateProduto(ctx context.Context, arg CreateProdutoParams) (Product, error)
+	DeleteProduct(ctx context.Context, id int64) error
 	FindProductByID(ctx context.Context, id int64) (Product, error)
-	FindUserByEmailPassword(ctx context.Context, arg FindUserByEmailPasswordParams) (User, error)
-	ListProducts(ctx context.Context) ([]Product, error)
+	FindUserByEmailPassword(ctx context.Context, email string) (User, error)
+	ListProducts(ctx context.Context, arg ListProductsParams) ([]ListProductsRow, error)
 	Me(ctx context.Context, id int64) (User, error)
+	Meproducts(ctx context.Context, sellerID pgtype.Int8) ([]Product, error)
+	OrderItemsOrderId(ctx context.Context, orderID int64) ([]OrderItem, error)
+	OrdersId(ctx context.Context, id int64) (Order, error)
+	OrdersMe(ctx context.Context, customerID int64) ([]Order, error)
 	Register(ctx context.Context, arg RegisterParams) (User, error)
+	UpdateProduct(ctx context.Context, arg UpdateProductParams) (Product, error)
 	UpdateStock(ctx context.Context, arg UpdateStockParams) (UpdateStockRow, error)
 }
 
