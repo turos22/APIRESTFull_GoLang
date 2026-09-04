@@ -57,4 +57,6 @@ select * from order_items where order_id = $1;
 -- name: OrdersMe :many
 select * from orders where customer_id = $1;
 
+-- name: OrderMeId :one
+select * from orders where id = $1 and customer_id = $2;
 

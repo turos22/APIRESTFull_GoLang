@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-chi/jwtauth/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 
 	//"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/turos22/APIRESTFull_GoLang/internal/env"
@@ -21,6 +22,7 @@ func main() {
 		db: dbConfig{
 			dsn: env.GetString("GOOSE_DBSTRING", "postgres://postgres:postgres@localhost:5434/api_ecom?sslmode=disable"),
 		},
+		redisAddr: env.GetString("GOOSE_REDIS", "localhost:6379"),
 	}
 
 	poolcfg, err := pgxpool.ParseConfig(cfg.db.dsn)
@@ -43,10 +45,15 @@ func main() {
 	logger.Info("Connected to database", "dsn", cfg.db.dsn)
 	jwtauth := jwtauth.New("HS256", []byte("secret"), nil)
 
+	rdb := redis.NewClient(&redis.Options{
+		Addr: cfg.redisAddr, // vem de env, ex: "redis:6379"
+	})
+
 	api := application{
 		config: cfg,
 		db: pool,
 		jwt: jwtauth,
+		rdb : rdb,
 	}
 	//montar o servidor
 	//Subir o servidor

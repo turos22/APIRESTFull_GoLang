@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/jwtauth/v5"
 	repo "github.com/turos22/APIRESTFull_GoLang/internal/adapters/postgresql/sqlc"
 	JSON "github.com/turos22/APIRESTFull_GoLang/internal/json"
 )
@@ -15,7 +16,9 @@ type handler struct {
 }
 
 func NewHandler(s Service) *handler {
-	return &handler{service: s}
+	return &handler{
+		service: s,
+	}
 }
 
 func (h *handler) PlaceOrder(w http.ResponseWriter, r *http.Request) {
@@ -25,7 +28,20 @@ func (h *handler) PlaceOrder(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	
+
+	_, claims, err := jwtauth.FromContext(r.Context())
+	if err != nil {
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+	userID, err := strconv.ParseInt(claims["sub"].(string), 10, 64)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	tempOrder.CustomerID = userID
+
 	createdOrder, itensOrder, err := h.service.PlaceOrder(r.Context(), tempOrder)
 	if err != nil {
 		log.Println(err)

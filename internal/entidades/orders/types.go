@@ -21,4 +21,5 @@ type Service interface {
 	GetOrderId(ctx context.Context, id int64) (repo.Order, error)
 	MeOrder(ctx context.Context, id int64) ([]repo.Order, error)
 	GetItemsOrder(ctx context.Context, id int64) ([]repo.OrderItem, error)
+	OrderMeId(ctx context.Context, id int64, customerId int64) (repo.Order, error)
 }

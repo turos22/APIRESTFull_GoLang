@@ -14,6 +14,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/go-chi/jwtauth/v5"
+	"github.com/redis/go-redis/v9"
 	"github.com/jackc/pgx/v5/pgxpool"
 	repo "github.com/turos22/APIRESTFull_GoLang/internal/adapters/postgresql/sqlc"
 	"github.com/turos22/APIRESTFull_GoLang/internal/entidades/auth"
@@ -57,7 +58,7 @@ func (app *application) mount() http.Handler {
 		AllowCredentials: true,
 	}))
 	//Services e Handlers
-	ordersService := orders.NewService(repo.New(app.db), app.db)
+	ordersService := orders.NewService(repo.New(app.db), app.db, app.rdb)
 	ordersHandler := orders.NewHandler(ordersService)
 
 	productsService := products.NewService(repo.New(app.db))
@@ -74,6 +75,23 @@ func (app *application) mount() http.Handler {
 		w.Write([]byte("all good"))
 	})
 
+	r.Get("/pronto", 
+		func(w http.ResponseWriter, r *http.Request) {
+        ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+        defer cancel()
+
+        if err := app.db.Ping(ctx); err != nil {
+            http.Error(w, "postgres unreachable", http.StatusServiceUnavailable)
+            return
+        }
+        if err := app.rdb.Ping(ctx).Err(); err != nil {
+            http.Error(w, "redis unreachable", http.StatusServiceUnavailable)
+            return
+        }
+        w.WriteHeader(http.StatusOK)
+        w.Write([]byte("ok"))
+	})
+
 	//Post
 	r.Post("/auth/register", authHandler.Register)
 	r.Post("/auth/login", authHandler.Login)
@@ -88,6 +106,9 @@ func (app *application) mount() http.Handler {
 		//Posts
 		r.Post("/orders", ordersHandler.PlaceOrder)
 		r.Post("/auth/logout", authHandler.Logout)
+		r.Get("/orders/{id}", ordersHandler.OrderId)
+		r.Get("/orders/me", ordersHandler.OrdersMe)	
+
 
 		r.Group(func(r chi.Router) {
 			r.Use(RequireRole("vendedor"))
@@ -145,11 +166,13 @@ type application struct {
 	config config
 	db     *pgxpool.Pool
 	jwt    *jwtauth.JWTAuth
+	rdb    *redis.Client
 }
 
 type config struct {
-	addr string
-	db   dbConfig
+	addr      string
+	db        dbConfig
+	redisAddr string
 }
 
 type dbConfig struct {

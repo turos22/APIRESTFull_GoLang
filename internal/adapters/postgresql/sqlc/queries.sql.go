@@ -305,6 +305,28 @@ func (q *Queries) OrderItemsOrderId(ctx context.Context, orderID int64) ([]Order
 	return items, nil
 }
 
+const orderMeId = `-- name: OrderMeId :one
+select id, customer_id, created_at, status, total_cents from orders where id = $1 and customer_id = $2
+`
+
+type OrderMeIdParams struct {
+	ID         int64 `json:"id"`
+	CustomerID int64 `json:"customer_id"`
+}
+
+func (q *Queries) OrderMeId(ctx context.Context, arg OrderMeIdParams) (Order, error) {
+	row := q.db.QueryRow(ctx, orderMeId, arg.ID, arg.CustomerID)
+	var i Order
+	err := row.Scan(
+		&i.ID,
+		&i.CustomerID,
+		&i.CreatedAt,
+		&i.Status,
+		&i.TotalCents,
+	)
+	return i, err
+}
+
 const ordersId = `-- name: OrdersId :one
 select id, customer_id, created_at, status, total_cents from orders where id = $1
 `

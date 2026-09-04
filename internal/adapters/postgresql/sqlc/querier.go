@@ -21,6 +21,7 @@ type Querier interface {
 	Me(ctx context.Context, id int64) (User, error)
 	Meproducts(ctx context.Context, sellerID pgtype.Int8) ([]Product, error)
 	OrderItemsOrderId(ctx context.Context, orderID int64) ([]OrderItem, error)
+	OrderMeId(ctx context.Context, arg OrderMeIdParams) (Order, error)
 	OrdersId(ctx context.Context, id int64) (Order, error)
 	OrdersMe(ctx context.Context, customerID int64) ([]Order, error)
 	Register(ctx context.Context, arg RegisterParams) (User, error)

@@ -3,7 +3,9 @@ package orders
 import (
 	"context"
 	"fmt"
+
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 	repo "github.com/turos22/APIRESTFull_GoLang/internal/adapters/postgresql/sqlc"
 )
 
@@ -15,14 +17,17 @@ var (
 type svc struct {
 	repo repo.Queries
 	db *pgxpool.Pool
+	rdb *redis.Client
 }
 
-func NewService(repo *repo.Queries, db *pgxpool.Pool) Service {
+func NewService(repo *repo.Queries, db *pgxpool.Pool, rdb *redis.Client) Service {
 	return &svc{
 		repo: *repo,
 		db: db,
+		rdb: rdb,
 	}
 }
+
 
 func (svc *svc) PlaceOrder(ctx context.Context, tempOrder createOrderParams) (repo.Order, []repo.OrderItem, error) {
 	if tempOrder.CustomerID == 0{
@@ -40,7 +45,6 @@ func (svc *svc) PlaceOrder(ctx context.Context, tempOrder createOrderParams) (re
 
 	qtx := svc.repo.WithTx(tx)
 
-	//create an Order
 	order, err := qtx.CreateOrder(ctx, tempOrder.CustomerID)
 	if err != nil {
 		return repo.Order{},[]repo.OrderItem{}, err
@@ -84,6 +88,17 @@ func (svc *svc) PlaceOrder(ctx context.Context, tempOrder createOrderParams) (re
 	}
 	tx.Commit(ctx)
 
+	//criar evento de Stream no Redis
+	if err := svc.rdb.XAdd(ctx, &redis.XAddArgs{
+		Stream: "orders.created",
+		Values: map[string]interface{}{
+			"order_id":    order.ID,
+			"customer_id": order.CustomerID,
+		},
+	}).Err(); err != nil {
+		fmt.Println("falha ao publicar orders.created:", err)
+	}
+
 	return order, itensOrder, nil
 
 }
@@ -98,4 +113,11 @@ func (svc *svc) MeOrder(ctx context.Context, id int64) ([]repo.Order, error){
 
 func (svc *svc) GetItemsOrder(ctx context.Context, id int64) ([]repo.OrderItem, error){
 	return svc.repo.OrderItemsOrderId(ctx, id)
+}
+
+func (svc *svc) OrderMeId(ctx context.Context, id int64, customerId int64) (repo.Order, error){
+	return svc.repo.OrderMeId(ctx, repo.OrderMeIdParams{
+		ID: id,
+		CustomerID: customerId,
+	})
 }
