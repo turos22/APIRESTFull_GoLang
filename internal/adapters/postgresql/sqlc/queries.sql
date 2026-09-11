@@ -15,8 +15,11 @@ SELECT * FROM products WHERE id = $1;
 
 -- name: CreateOrder :one
 INSERT INTO orders(
-    customer_id
-) VALUES ($1) RETURNING *;
+    customer_id, status, total_cents
+) VALUES ($1, 'pendente', 0) RETURNING *;
+
+-- name: AtualizarTotalDoPedido :one
+UPDATE orders SET total_cents = $1 WHERE id = $2 RETURNING *;
 
 -- name: CreateOrderItem :one
 INSERT INTO order_items(order_id, product_id, quantity, price_cents) 

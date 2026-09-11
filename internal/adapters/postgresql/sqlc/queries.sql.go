@@ -11,10 +11,32 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const atualizarTotalDoPedido = `-- name: AtualizarTotalDoPedido :one
+UPDATE orders SET total_cents = $1 WHERE id = $2 RETURNING id, customer_id, created_at, status, total_cents
+`
+
+type AtualizarTotalDoPedidoParams struct {
+	TotalCents pgtype.Int4 `json:"total_cents"`
+	ID         int64       `json:"id"`
+}
+
+func (q *Queries) AtualizarTotalDoPedido(ctx context.Context, arg AtualizarTotalDoPedidoParams) (Order, error) {
+	row := q.db.QueryRow(ctx, atualizarTotalDoPedido, arg.TotalCents, arg.ID)
+	var i Order
+	err := row.Scan(
+		&i.ID,
+		&i.CustomerID,
+		&i.CreatedAt,
+		&i.Status,
+		&i.TotalCents,
+	)
+	return i, err
+}
+
 const createOrder = `-- name: CreateOrder :one
 INSERT INTO orders(
-    customer_id
-) VALUES ($1) RETURNING id, customer_id, created_at, status, total_cents
+    customer_id, status, total_cents
+) VALUES ($1, 'pendente', 0) RETURNING id, customer_id, created_at, status, total_cents
 `
 
 func (q *Queries) CreateOrder(ctx context.Context, customerID int64) (Order, error) {

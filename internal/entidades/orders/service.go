@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 	repo "github.com/turos22/APIRESTFull_GoLang/internal/adapters/postgresql/sqlc"
@@ -51,6 +52,7 @@ func (svc *svc) PlaceOrder(ctx context.Context, tempOrder createOrderParams) (re
 	}
 
 	var itensOrder []repo.OrderItem
+	var totalEmCentavos int32
 	//ver se produto existe
 	for _, item := range tempOrder.Items {
 		product, err := qtx.FindProductByID(ctx, item.ProductID)
@@ -74,6 +76,7 @@ func (svc *svc) PlaceOrder(ctx context.Context, tempOrder createOrderParams) (re
 		}
 
 		itensOrder = append(itensOrder, itemzinho)
+		totalEmCentavos += product.PriceInCents * item.Quantity
 
 		_, err = qtx.UpdateStock(ctx, repo.UpdateStockParams{
 			ID: product.ID,
@@ -86,7 +89,22 @@ func (svc *svc) PlaceOrder(ctx context.Context, tempOrder createOrderParams) (re
 
 		
 	}
-	tx.Commit(ctx)
+
+	// O total so e conhecido depois de percorrer os itens, entao e gravado
+	// aqui, ainda dentro da transacao.
+	order, err = qtx.AtualizarTotalDoPedido(ctx, repo.AtualizarTotalDoPedidoParams{
+		TotalCents: pgtype.Int4{Int32: totalEmCentavos, Valid: true},
+		ID:         order.ID,
+	})
+	if err != nil {
+		return repo.Order{}, []repo.OrderItem{}, err
+	}
+
+	// Commit com erro ignorado publicava no Redis e devolvia 201 para um
+	// pedido que nunca existiu.
+	if err := tx.Commit(ctx); err != nil {
+		return repo.Order{}, []repo.OrderItem{}, err
+	}
 
 	//criar evento de Stream no Redis
 	if err := svc.rdb.XAdd(ctx, &redis.XAddArgs{
