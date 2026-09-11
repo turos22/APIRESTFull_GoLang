@@ -217,17 +217,30 @@ func (h *handler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 
 func (h *handler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(r.URL.Query().Get("id"), 10, 64)
-
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	err = h.service.DeleteProduct(r.Context(), id)
+	vendedorID, err := autenticacao.IDDoUsuario(r)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	linhas, err := h.service.DeleteProduct(r.Context(), id, vendedorID)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Zero linhas: ou o produto nao existe, ou nao e deste vendedor. Devolver
+	// 404 nos dois casos para nao confirmar a existencia de produto alheio.
+	if linhas == 0 {
+		http.Error(w, "produto nao encontrado", http.StatusNotFound)
 		return
 	}
 

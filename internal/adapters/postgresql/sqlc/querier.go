@@ -14,7 +14,7 @@ type Querier interface {
 	CreateOrder(ctx context.Context, customerID int64) (Order, error)
 	CreateOrderItem(ctx context.Context, arg CreateOrderItemParams) (OrderItem, error)
 	CreateProduto(ctx context.Context, arg CreateProdutoParams) (Product, error)
-	DeleteProduct(ctx context.Context, id int64) error
+	DeleteProduct(ctx context.Context, arg DeleteProductParams) (int64, error)
 	FindProductByID(ctx context.Context, id int64) (Product, error)
 	FindUserByEmailPassword(ctx context.Context, email string) (User, error)
 	ListCategories(ctx context.Context) ([]Category, error)

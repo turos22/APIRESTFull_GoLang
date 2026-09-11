@@ -102,13 +102,21 @@ func (q *Queries) CreateProduto(ctx context.Context, arg CreateProdutoParams) (P
 	return i, err
 }
 
-const deleteProduct = `-- name: DeleteProduct :exec
-DELETE FROM products WHERE id = $1
+const deleteProduct = `-- name: DeleteProduct :execrows
+UPDATE products SET active = false WHERE id = $1 AND seller_id = $2
 `
 
-func (q *Queries) DeleteProduct(ctx context.Context, id int64) error {
-	_, err := q.db.Exec(ctx, deleteProduct, id)
-	return err
+type DeleteProductParams struct {
+	ID       int64       `json:"id"`
+	SellerID pgtype.Int8 `json:"seller_id"`
+}
+
+func (q *Queries) DeleteProduct(ctx context.Context, arg DeleteProductParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteProduct, arg.ID, arg.SellerID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const findProductByID = `-- name: FindProductByID :one
@@ -265,7 +273,7 @@ func (q *Queries) Me(ctx context.Context, id int64) (User, error) {
 }
 
 const meproducts = `-- name: Meproducts :many
-SELECT id, name, price_in_cents, quantity, created_at, description, image_url, category_id, active, seller_id FROM products WHERE seller_id = $1
+SELECT id, name, price_in_cents, quantity, created_at, description, image_url, category_id, active, seller_id FROM products WHERE seller_id = $1 AND active = true
 `
 
 func (q *Queries) Meproducts(ctx context.Context, sellerID pgtype.Int8) ([]Product, error) {

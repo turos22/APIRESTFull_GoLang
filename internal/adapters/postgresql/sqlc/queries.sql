@@ -40,11 +40,11 @@ INSERT INTO products(name, price_in_cents, quantity, description, image_url, cat
 -- name: UpdateProduct :one
 UPDATE products SET name = $1, price_in_cents = $2, quantity = $3, description = $4, image_url = $5, category_id = $6, active = $7, seller_id = $8 WHERE id = $9 RETURNING *;
 
--- name: DeleteProduct :exec
-DELETE FROM products WHERE id = $1;
+-- name: DeleteProduct :execrows
+UPDATE products SET active = false WHERE id = $1 AND seller_id = $2;
 
 -- name: Meproducts :many
-SELECT * FROM products WHERE seller_id = $1;
+SELECT * FROM products WHERE seller_id = $1 AND active = true;
 
 -- name: OrdersId :one
 select * from orders where id = $1;

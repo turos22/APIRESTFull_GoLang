@@ -12,7 +12,7 @@ type Service interface {
 	FindProductByID(ctx context.Context, id int64) (repo.Product, error)
 	CreateProduct(ctx context.Context, params repo.CreateProdutoParams) (repo.Product, error)
 	UpdateProduct(ctx context.Context, params repo.UpdateProductParams) (repo.Product, error)
-	DeleteProduct(ctx context.Context, id int64) error
+	DeleteProduct(ctx context.Context, id int64, vendedorID int64) (int64, error)
 	MeProduct(ctx context.Context, id int64) ([]repo.Product, error)
 	ListCategories(ctx context.Context) ([]repo.Category, error)
 }
@@ -41,8 +41,11 @@ func (s *svc) UpdateProduct(ctx context.Context, params repo.UpdateProductParams
 	return s.repo.UpdateProduct(ctx, params)
 }
 
-func (s *svc) DeleteProduct(ctx context.Context, id int64) error {
-	return s.repo.DeleteProduct(ctx, id)
+func (s *svc) DeleteProduct(ctx context.Context, id int64, vendedorID int64) (int64, error) {
+	return s.repo.DeleteProduct(ctx, repo.DeleteProductParams{
+		ID:       id,
+		SellerID: pgtype.Int8{Int64: vendedorID, Valid: true},
+	})
 }
 
 func (s *svc) MeProduct(ctx context.Context, id int64) ([]repo.Product, error) {
