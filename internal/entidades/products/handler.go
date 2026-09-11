@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	repo "github.com/turos22/APIRESTFull_GoLang/internal/adapters/postgresql/sqlc"
+	"github.com/turos22/APIRESTFull_GoLang/internal/autenticacao"
 	"github.com/turos22/APIRESTFull_GoLang/internal/json"
 )
 
@@ -215,7 +216,7 @@ func (h *handler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	id, err := strconv.ParseInt(r.URL.Query().Get("id"), 10, 64)
 
 	if err != nil {
 		log.Println(err)
@@ -234,7 +235,7 @@ func (h *handler) DeleteProduct(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) MeusProduct(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	id, err := autenticacao.IDDoUsuario(r);
 
 	if err != nil {
 		log.Println(err)

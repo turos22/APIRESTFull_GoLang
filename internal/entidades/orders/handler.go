@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth/v5"
 	repo "github.com/turos22/APIRESTFull_GoLang/internal/adapters/postgresql/sqlc"
+	"github.com/turos22/APIRESTFull_GoLang/internal/autenticacao"
 	JSON "github.com/turos22/APIRESTFull_GoLang/internal/json"
 )
 
@@ -85,7 +86,7 @@ func (h *handler) OrderId(w http.ResponseWriter, r *http.Request){
 }
 
 func (h *handler) OrdersMe(w http.ResponseWriter, r *http.Request){
-	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	id, err := autenticacao.IDDoUsuario(r);
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)

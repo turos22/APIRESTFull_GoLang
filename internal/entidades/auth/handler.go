@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth/v5"
+	"github.com/turos22/APIRESTFull_GoLang/internal/autenticacao"
 	"github.com/turos22/APIRESTFull_GoLang/internal/json"
 )
 
@@ -29,7 +29,7 @@ func (h *handler) DevolverCookieJWT(w http.ResponseWriter, name string, userid i
 	expira := time.Now().Add(duracao)
 
 	_, tokenString, err := h.jwt.Encode(map[string]interface{}{
-		"sub":  userid,
+		"sub":  strconv.FormatInt(userid, 10),
 		"role": role,
 		"exp":  expira.Unix(),
 	})
@@ -51,17 +51,13 @@ func (h *handler) DevolverCookieJWT(w http.ResponseWriter, name string, userid i
 	})
 }
 
-// GET
-// me
 func (h *handler) Me(w http.ResponseWriter, r *http.Request) {
-	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	id, err := autenticacao.IDDoUsuario(r)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	//Deve pegar o ID do Token na verdade
 
 	usuario, err := h.service.Me(r.Context(), id)
 	if err != nil {
@@ -73,8 +69,6 @@ func (h *handler) Me(w http.ResponseWriter, r *http.Request) {
 	json.Write(w, http.StatusOK, NewUserResposta(usuario))
 }
 
-// Post
-// auth register
 func (h *handler) Register(w http.ResponseWriter, r *http.Request) {
 	var registro CreateUserParams
 	if err := json.Read(r, &registro); err != nil {
@@ -94,7 +88,7 @@ func (h *handler) Register(w http.ResponseWriter, r *http.Request) {
 
 	json.Write(w, http.StatusOK, NewUserResposta(usuarioCriado))
 }
-// auth login
+
 func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
 	var registro LoginUserParams
 	if err := json.Read(r, &registro); err != nil {
@@ -115,7 +109,7 @@ func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
 	json.Write(w, http.StatusOK, nil)
 }
 
-// auth logout
+
 func (h *handler) Logout(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     "jwt",
