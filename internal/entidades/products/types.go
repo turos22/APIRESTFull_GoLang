@@ -10,5 +10,4 @@ type produtoparams struct {
 	ImageURL    string `json:"image_url"`
 	CategoryID  int64  `json:"category_id"`
 	Active      bool   `json:"active"`
-	SellerID    int64  `json:"seller_id"`
 }

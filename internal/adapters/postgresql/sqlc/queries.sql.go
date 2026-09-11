@@ -437,7 +437,8 @@ func (q *Queries) Register(ctx context.Context, arg RegisterParams) (User, error
 }
 
 const updateProduct = `-- name: UpdateProduct :one
-UPDATE products SET name = $1, price_in_cents = $2, quantity = $3, description = $4, image_url = $5, category_id = $6, active = $7, seller_id = $8 WHERE id = $9 RETURNING id, name, price_in_cents, quantity, created_at, description, image_url, category_id, active, seller_id
+UPDATE products SET name = $1, price_in_cents = $2, quantity = $3, description = $4, image_url = $5, category_id = $6, active = $7
+WHERE id = $8 AND seller_id = $9 RETURNING id, name, price_in_cents, quantity, created_at, description, image_url, category_id, active, seller_id
 `
 
 type UpdateProductParams struct {
@@ -448,8 +449,8 @@ type UpdateProductParams struct {
 	ImageUrl     pgtype.Text `json:"image_url"`
 	CategoryID   pgtype.Int8 `json:"category_id"`
 	Active       pgtype.Bool `json:"active"`
-	SellerID     pgtype.Int8 `json:"seller_id"`
 	ID           int64       `json:"id"`
+	SellerID     pgtype.Int8 `json:"seller_id"`
 }
 
 func (q *Queries) UpdateProduct(ctx context.Context, arg UpdateProductParams) (Product, error) {
@@ -461,8 +462,8 @@ func (q *Queries) UpdateProduct(ctx context.Context, arg UpdateProductParams) (P
 		arg.ImageUrl,
 		arg.CategoryID,
 		arg.Active,
-		arg.SellerID,
 		arg.ID,
+		arg.SellerID,
 	)
 	var i Product
 	err := row.Scan(

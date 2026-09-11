@@ -1,11 +1,13 @@
 package products
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	repo "github.com/turos22/APIRESTFull_GoLang/internal/adapters/postgresql/sqlc"
 	"github.com/turos22/APIRESTFull_GoLang/internal/autenticacao"
@@ -158,6 +160,12 @@ func (h *handler) CreateProduct(w http.ResponseWriter, r *http.Request){
 		return
 	}
 
+	vendedorID, err := autenticacao.IDDoUsuario(r)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	createdProduct, err := h.service.CreateProduct(r.Context(), repo.CreateProdutoParams{
 		Name:           produto.Name,
@@ -166,7 +174,7 @@ func (h *handler) CreateProduct(w http.ResponseWriter, r *http.Request){
 		Quantity:       int32(produto.Quantity),
 		CategoryID:     toPgInt8(produto.CategoryID),
 		ImageUrl:       toPgText(produto.ImageURL),
-		SellerID:       toPgInt8(produto.SellerID),
+		SellerID:       pgtype.Int8{Int64: vendedorID, Valid: true},
 		Active:         pgtype.Bool{Bool: produto.Active, Valid: true},
 	})
 	if err != nil {
@@ -194,6 +202,12 @@ func (h *handler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	vendedorID, err := autenticacao.IDDoUsuario(r)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	updatedProduct, err := h.service.UpdateProduct(r.Context(), repo.UpdateProductParams{
 		Name:           produto.Name,
@@ -202,11 +216,16 @@ func (h *handler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 		Quantity:       int32(produto.Quantity),
 		CategoryID:     toPgInt8(produto.CategoryID),
 		ImageUrl:       toPgText(produto.ImageURL),
-		SellerID:       toPgInt8(produto.SellerID),
 		Active:         pgtype.Bool{Bool: produto.Active, Valid: true},
-		ID: produto.ID,
+		ID:             produto.ID,
+		SellerID:       pgtype.Int8{Int64: vendedorID, Valid: true},
 	})
 	if err != nil {
+		// Escopado pelo dono: produto alheio nao volta linha nenhuma.
+		if errors.Is(err, pgx.ErrNoRows) {
+			http.Error(w, "produto nao encontrado", http.StatusNotFound)
+			return
+		}
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
