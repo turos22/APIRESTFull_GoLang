@@ -25,7 +25,7 @@ func NewService(repo repo.Querier) Service {
 }
 
 func (s *svc) ListProducts(ctx context.Context, params repo.ListProductsParams) ([]repo.ListProductsRow, error) {
-	return s.repo.ListProducts(ctx, repo.ListProductsParams{})
+	return s.repo.ListProducts(ctx, params)
 }
 
 func (s *svc) FindProductByID(ctx context.Context, id int64) (repo.Product, error) {

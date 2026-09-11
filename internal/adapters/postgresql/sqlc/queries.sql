@@ -1,6 +1,4 @@
 -- name: ListProducts :many
--- name: ListProducts :many
--- name: ListProducts :many
 SELECT id, name, price_in_cents, quantity, description, image_url, category_id, active, seller_id
 FROM products
 WHERE
