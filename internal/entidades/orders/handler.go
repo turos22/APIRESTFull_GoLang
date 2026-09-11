@@ -1,12 +1,14 @@
 package orders
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/jwtauth/v5"
+	"github.com/jackc/pgx/v5"
 	repo "github.com/turos22/APIRESTFull_GoLang/internal/adapters/postgresql/sqlc"
 	"github.com/turos22/APIRESTFull_GoLang/internal/autenticacao"
 	JSON "github.com/turos22/APIRESTFull_GoLang/internal/json"
@@ -68,8 +70,21 @@ func (h *handler) OrderId(w http.ResponseWriter, r *http.Request){
 		return
 	}
 
-	order, err := h.service.GetOrderId(r.Context(), id)
+	compradorID, err := autenticacao.IDDoUsuario(r)
 	if err != nil {
+		log.Println(err)
+		http.Error(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	// Escopado pelo dono: pedido alheio some em vez de dar 403, para nao
+	// confirmar que ele existe.
+	order, err := h.service.OrderMeId(r.Context(), id, compradorID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			http.Error(w, "pedido nao encontrado", http.StatusNotFound)
+			return
+		}
 		log.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
