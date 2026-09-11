@@ -167,7 +167,7 @@ func (h *handler) CreateProduct(w http.ResponseWriter, r *http.Request){
 		CategoryID:     toPgInt8(produto.CategoryID),
 		ImageUrl:       toPgText(produto.ImageURL),
 		SellerID:       toPgInt8(produto.SellerID),
-		Active:         pgtype.Bool{Bool: produto.Active},
+		Active:         pgtype.Bool{Bool: produto.Active, Valid: true},
 	})
 	if err != nil {
 		log.Println(err)
@@ -203,7 +203,7 @@ func (h *handler) UpdateProduct(w http.ResponseWriter, r *http.Request) {
 		CategoryID:     toPgInt8(produto.CategoryID),
 		ImageUrl:       toPgText(produto.ImageURL),
 		SellerID:       toPgInt8(produto.SellerID),
-		Active:         pgtype.Bool{Bool: produto.Active},
+		Active:         pgtype.Bool{Bool: produto.Active, Valid: true},
 		ID: produto.ID,
 	})
 	if err != nil {
