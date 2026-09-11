@@ -151,6 +151,30 @@ func (q *Queries) FindUserByEmailPassword(ctx context.Context, email string) (Us
 	return i, err
 }
 
+const listCategories = `-- name: ListCategories :many
+SELECT id, name FROM category ORDER BY name
+`
+
+func (q *Queries) ListCategories(ctx context.Context) ([]Category, error) {
+	rows, err := q.db.Query(ctx, listCategories)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Category
+	for rows.Next() {
+		var i Category
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listProducts = `-- name: ListProducts :many
 SELECT id, name, price_in_cents, quantity, description, image_url, category_id, active, seller_id
 FROM products

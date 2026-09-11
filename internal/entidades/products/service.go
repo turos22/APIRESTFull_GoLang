@@ -14,6 +14,7 @@ type Service interface {
 	UpdateProduct(ctx context.Context, params repo.UpdateProductParams) (repo.Product, error)
 	DeleteProduct(ctx context.Context, id int64) error
 	MeProduct(ctx context.Context, id int64) ([]repo.Product, error)
+	ListCategories(ctx context.Context) ([]repo.Category, error)
 }
 
 type svc struct {
@@ -46,5 +47,9 @@ func (s *svc) DeleteProduct(ctx context.Context, id int64) error {
 
 func (s *svc) MeProduct(ctx context.Context, id int64) ([]repo.Product, error) {
 	return s.repo.Meproducts(ctx, pgtype.Int8{Int64: id, Valid: true})
+}
+
+func (s *svc) ListCategories(ctx context.Context) ([]repo.Category, error) {
+	return s.repo.ListCategories(ctx)
 }
 

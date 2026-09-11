@@ -58,3 +58,6 @@ select * from orders where customer_id = $1;
 -- name: OrderMeId :one
 select * from orders where id = $1 and customer_id = $2;
 
+-- name: ListCategories :many
+SELECT id, name FROM category ORDER BY name;
+

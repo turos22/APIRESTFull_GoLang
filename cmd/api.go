@@ -71,6 +71,7 @@ func (app *application) mount() http.Handler {
 	//Gets
 	r.Get("/products", productHandler.ListProducts)
 	r.Get("/product/{id}", productHandler.FindProductById)
+	r.Get("/categories", productHandler.ListCategories)
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("all good"))
 	})

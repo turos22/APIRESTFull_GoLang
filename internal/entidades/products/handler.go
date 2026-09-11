@@ -252,3 +252,14 @@ func (h *handler) MeusProduct(w http.ResponseWriter, r *http.Request) {
 
 	json.Write(w, http.StatusOK, NewListProductsRespostas(products))
 }
+
+func (h *handler) ListCategories(w http.ResponseWriter, r *http.Request) {
+	categorias, err := h.service.ListCategories(r.Context())
+	if err != nil {
+		log.Println(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	json.Write(w, http.StatusOK, NovaListaDeCategorias(categorias))
+}

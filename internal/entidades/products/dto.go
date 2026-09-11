@@ -47,3 +47,18 @@ func NewListProductsRespostas (u []repo.Product) []ProductResposta {
 		Quantity    : u.Quantity,
 	}
 }
+
+type CategoriaResposta struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+}
+
+func NovaListaDeCategorias(u []repo.Category) []CategoriaResposta {
+	// Slice nao-nil para a resposta ser [] e nao null quando nao houver
+	// categoria: o front faz .map direto no corpo.
+	items := make([]CategoriaResposta, 0, len(u))
+	for _, v := range u {
+		items = append(items, CategoriaResposta{ID: v.ID, Name: v.Name})
+	}
+	return items
+}

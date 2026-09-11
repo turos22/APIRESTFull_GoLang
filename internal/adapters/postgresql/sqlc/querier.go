@@ -17,6 +17,7 @@ type Querier interface {
 	DeleteProduct(ctx context.Context, id int64) error
 	FindProductByID(ctx context.Context, id int64) (Product, error)
 	FindUserByEmailPassword(ctx context.Context, email string) (User, error)
+	ListCategories(ctx context.Context) ([]Category, error)
 	ListProducts(ctx context.Context, arg ListProductsParams) ([]ListProductsRow, error)
 	Me(ctx context.Context, id int64) (User, error)
 	Meproducts(ctx context.Context, sellerID pgtype.Int8) ([]Product, error)
