@@ -65,3 +65,6 @@ select * from orders where id = $1 and customer_id = $2;
 -- name: ListCategories :many
 SELECT id, name FROM category ORDER BY name;
 
+-- name: AtualizarStatusDoPedido :exec
+UPDATE orders SET status = $1 WHERE id = $2;
+

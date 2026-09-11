@@ -11,6 +11,7 @@ import (
 )
 
 type Querier interface {
+	AtualizarStatusDoPedido(ctx context.Context, arg AtualizarStatusDoPedidoParams) error
 	AtualizarTotalDoPedido(ctx context.Context, arg AtualizarTotalDoPedidoParams) (Order, error)
 	CreateOrder(ctx context.Context, customerID int64) (Order, error)
 	CreateOrderItem(ctx context.Context, arg CreateOrderItemParams) (OrderItem, error)

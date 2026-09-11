@@ -11,6 +11,20 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const atualizarStatusDoPedido = `-- name: AtualizarStatusDoPedido :exec
+UPDATE orders SET status = $1 WHERE id = $2
+`
+
+type AtualizarStatusDoPedidoParams struct {
+	Status pgtype.Text `json:"status"`
+	ID     int64       `json:"id"`
+}
+
+func (q *Queries) AtualizarStatusDoPedido(ctx context.Context, arg AtualizarStatusDoPedidoParams) error {
+	_, err := q.db.Exec(ctx, atualizarStatusDoPedido, arg.Status, arg.ID)
+	return err
+}
+
 const atualizarTotalDoPedido = `-- name: AtualizarTotalDoPedido :one
 UPDATE orders SET total_cents = $1 WHERE id = $2 RETURNING id, customer_id, created_at, status, total_cents
 `
