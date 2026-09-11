@@ -45,6 +45,6 @@ func (s *svc) DeleteProduct(ctx context.Context, id int64) error {
 }
 
 func (s *svc) MeProduct(ctx context.Context, id int64) ([]repo.Product, error) {
-	return s.repo.Meproducts(ctx, pgtype.Int8{Int64: id})
+	return s.repo.Meproducts(ctx, pgtype.Int8{Int64: id, Valid: true})
 }
 
