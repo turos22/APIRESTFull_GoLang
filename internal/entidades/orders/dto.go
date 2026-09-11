@@ -1,11 +1,15 @@
 package orders
 
-import repo "github.com/turos22/APIRESTFull_GoLang/internal/adapters/postgresql/sqlc"
+import (
+	"github.com/jackc/pgx/v5/pgtype"
+	repo "github.com/turos22/APIRESTFull_GoLang/internal/adapters/postgresql/sqlc"
+)
 
 type OrdersResposta struct {
 	OrderID    int64               `json:"order_id"`
 	CustomerID int64               `json:"customer_id"`
 	Items      []orderItemResposta `json:"items"`
+	createdAt  pgtype.Timestamptz `json:"created_at"`
 }
 
 type orderItemResposta struct {
@@ -32,6 +36,7 @@ func NovaOrdersResposta(u repo.Order, i []repo.OrderItem) OrdersResposta {
 		OrderID:    u.ID,
 		CustomerID: u.CustomerID,
 		Items:      items,
+		createdAt:  u.CreatedAt,
 	}
 }
 func NovaListaOrdersResposta(u []repo.Order, i []repo.OrderItem) []OrdersResposta {
