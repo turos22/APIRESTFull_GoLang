@@ -68,3 +68,8 @@ SELECT id, name FROM category ORDER BY name;
 -- name: AtualizarStatusDoPedido :exec
 UPDATE orders SET status = $1 WHERE id = $2;
 
+
+-- name: BaixarEstoque :execrows
+UPDATE products
+SET quantity = quantity - sqlc.arg('unidades')::int
+WHERE id = sqlc.arg('id') AND quantity >= sqlc.arg('unidades')::int;

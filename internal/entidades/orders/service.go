@@ -60,8 +60,15 @@ func (svc *svc) PlaceOrder(ctx context.Context, tempOrder createOrderParams) (re
 			return repo.Order{},[]repo.OrderItem{}, ErrProductNotFound
 		}
 
-		if product.Quantity < item.Quantity {
-			return repo.Order{},[]repo.OrderItem{}, ErrProductOutOfStock
+		linhas, err := qtx.BaixarEstoque(ctx, repo.BaixarEstoqueParams{
+			Unidades: item.Quantity,
+			ID:       item.ProductID,
+		})
+		if err != nil {
+			return repo.Order{}, []repo.OrderItem{}, err
+		}
+		if linhas == 0 {
+			return repo.Order{}, []repo.OrderItem{}, ErrProductOutOfStock
 		}
 
 		itemzinho, err := qtx.CreateOrderItem(ctx, repo.CreateOrderItemParams{
@@ -77,21 +84,8 @@ func (svc *svc) PlaceOrder(ctx context.Context, tempOrder createOrderParams) (re
 
 		itensOrder = append(itensOrder, itemzinho)
 		totalEmCentavos += product.PriceInCents * item.Quantity
-
-		_, err = qtx.UpdateStock(ctx, repo.UpdateStockParams{
-			ID: product.ID,
-			Quantity: product.Quantity - item.Quantity,
-		})
-
-		if err != nil {
-			return repo.Order{},[]repo.OrderItem{}, err
-		}
-
-		
 	}
 
-	// O total so e conhecido depois de percorrer os itens, entao e gravado
-	// aqui, ainda dentro da transacao.
 	order, err = qtx.AtualizarTotalDoPedido(ctx, repo.AtualizarTotalDoPedidoParams{
 		TotalCents: pgtype.Int4{Int32: totalEmCentavos, Valid: true},
 		ID:         order.ID,
@@ -100,13 +94,11 @@ func (svc *svc) PlaceOrder(ctx context.Context, tempOrder createOrderParams) (re
 		return repo.Order{}, []repo.OrderItem{}, err
 	}
 
-	// Commit com erro ignorado publicava no Redis e devolvia 201 para um
-	// pedido que nunca existiu.
+
 	if err := tx.Commit(ctx); err != nil {
 		return repo.Order{}, []repo.OrderItem{}, err
 	}
 
-	//criar evento de Stream no Redis
 	if err := svc.rdb.XAdd(ctx, &redis.XAddArgs{
 		Stream: "orders.created",
 		Values: map[string]interface{}{

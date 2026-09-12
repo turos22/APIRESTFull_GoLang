@@ -47,6 +47,25 @@ func (q *Queries) AtualizarTotalDoPedido(ctx context.Context, arg AtualizarTotal
 	return i, err
 }
 
+const baixarEstoque = `-- name: BaixarEstoque :execrows
+UPDATE products
+SET quantity = quantity - $1::int
+WHERE id = $2 AND quantity >= $1::int
+`
+
+type BaixarEstoqueParams struct {
+	Unidades int32 `json:"unidades"`
+	ID       int64 `json:"id"`
+}
+
+func (q *Queries) BaixarEstoque(ctx context.Context, arg BaixarEstoqueParams) (int64, error) {
+	result, err := q.db.Exec(ctx, baixarEstoque, arg.Unidades, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const createOrder = `-- name: CreateOrder :one
 INSERT INTO orders(
     customer_id, status, total_cents
