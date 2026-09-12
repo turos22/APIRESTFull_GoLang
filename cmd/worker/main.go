@@ -93,8 +93,6 @@ func main() {
 func tratar(ctx context.Context, rdb *redis.Client, q *repo.Queries, msg redis.XMessage) {
 	pedidoID, err := idDoPedido(msg)
 	if err != nil {
-		// Mensagem que nunca vai dar certo: tirar da fila em vez de
-		// reprocessar para sempre.
 		log.Printf("mensagem %s descartada: %v", msg.ID, err)
 		confirmar(ctx, rdb, msg.ID)
 		return
@@ -118,8 +116,7 @@ func tratar(ctx context.Context, rdb *redis.Client, q *repo.Queries, msg redis.X
 	}
 
 	if err != nil {
-		// Erro de infraestrutura: nao dar XAck, para a mensagem continuar
-		// pendente e outro consumidor poder retomar.
+
 		log.Printf("pedido %d: %v", pedidoID, err)
 		return
 	}
@@ -127,8 +124,6 @@ func tratar(ctx context.Context, rdb *redis.Client, q *repo.Queries, msg redis.X
 	confirmar(ctx, rdb, msg.ID)
 }
 
-// processarPedido leva o pedido de 'pendente' ate 'enviado'. Na recusa, grava
-// 'falhou' e devolve errPagamentoRecusado.
 func processarPedido(ctx context.Context, q *repo.Queries, pedidoID int64) error {
 	if err := cobrar(pedidoID); err != nil {
 		if erroDeGravacao := gravarStatus(ctx, q, pedidoID, "falhou"); erroDeGravacao != nil {
@@ -137,8 +132,6 @@ func processarPedido(ctx context.Context, q *repo.Queries, pedidoID int64) error
 		return err
 	}
 
-	// 'pendente' ja foi gravado no PlaceOrder, entao a esteira comeca em
-	// 'pago'. Os nomes sao contrato do front: ETAPAS_DO_PEDIDO.
 	esteira := []struct {
 		status string
 		espera time.Duration
@@ -158,8 +151,6 @@ func processarPedido(ctx context.Context, q *repo.Queries, pedidoID int64) error
 	return nil
 }
 
-// cobrar simula a chamada ao provedor de pagamento: demora de 2 a 5 segundos e
-// recusa em ~10% das vezes, com ate maxTentativas.
 func cobrar(pedidoID int64) error {
 	for tentativa := 1; tentativa <= maxTentativas; tentativa++ {
 		time.Sleep(time.Duration(2000+rand.IntN(3001)) * time.Millisecond)
@@ -193,7 +184,6 @@ func idDoPedido(msg redis.XMessage) (int64, error) {
 	if !existe {
 		return 0, fmt.Errorf("mensagem sem order_id")
 	}
-	// O Redis devolve tudo como string, mesmo o XAdd tendo mandado int64.
 	return strconv.ParseInt(fmt.Sprint(cru), 10, 64)
 }
 

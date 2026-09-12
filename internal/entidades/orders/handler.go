@@ -77,8 +77,6 @@ func (h *handler) OrderId(w http.ResponseWriter, r *http.Request){
 		return
 	}
 
-	// Escopado pelo dono: pedido alheio some em vez de dar 403, para nao
-	// confirmar que ele existe.
 	order, err := h.service.OrderMeId(r.Context(), id, compradorID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
