@@ -179,6 +179,14 @@ Essa verificação importa mais do que parece. A afirmação óbvia — "o estoq
 go test ./internal/entidades/orders/ -race -v
 ```
 
+O Docker precisa estar rodando: é o testcontainers que sobe o banco. Com o Docker parado, a mensagem de erro fala em "rootless Docker is not supported on Windows", o que engana — o problema é o daemon fora do ar, não a configuração.
+
+## Integração contínua
+
+O workflow em `.github/workflows/ci.yml` roda a cada push na `main` e em todo pull request, em dois jobs: um faz `go vet`, `go build` e `go test -race`; o outro constrói os três stages do Dockerfile, para que uma quebra no empacotamento apareça antes da hora de subir.
+
+Não há segredo configurado no repositório. O teste de concorrência cria o próprio banco, então o CI não precisa de string de conexão nem de serviço externo.
+
 **Sobre o que este repositório não demonstra:** eu ainda não tenho prática em escrever testes. Não há testes de handler, de autorização nem de casos de borda, e a verificação do resto do projeto foi manual, chamando os endpoints e conferindo o resultado no banco. O teste que existe cobre um problema real e específico; ele não representa uma suíte, e não quero que pareça uma.
 
 ---

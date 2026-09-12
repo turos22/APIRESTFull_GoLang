@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Menor privilegio possivel: o CI so precisa ler o codigo.
+permissions:
+  contents: read
+
+# Push novo na mesma branch cancela a execucao anterior, que ja ficou obsoleta.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  testes:
+    name: Vet, build e testes
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          # Le a versao do proprio go.mod. Nao existe um segundo lugar para
+          # esquecer de atualizar quando o projeto mudar de versao.
+          go-version-file: go.mod
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: go build
+        run: go build ./...
+
+      # O teste de concorrencia sobe um PostgreSQL proprio via testcontainers.
+      # Os runners ubuntu-latest ja vem com Docker, entao nao ha servico nem
+      # segredo para configurar aqui. O timeout e folgado por causa do tempo
+      # de baixar a imagem do Postgres na primeira execucao.
+      - name: go test
+        run: go test ./... -race -timeout 10m
+
+  imagens:
+    name: Build das imagens
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Garante que o Dockerfile continua compilando os tres stages. E o tipo
+      # de coisa que quebra sem ninguem perceber, porque so aparece na hora
+      # de subir.
+      - name: Build dos tres stages
+        run: |
+          docker build --target api     -t ecom-api:ci     .
+          docker build --target worker  -t ecom-worker:ci  .
+          docker build --target migrate -t ecom-migrate:ci .
