@@ -1,0 +1,19 @@
+# controle de versao e segredo
+.git
+.gitignore
+**/.env
+.env.*
+
+# ambiente de desenvolvimento
+.vscode
+.idea
+
+# documentacao e planos (nao entram no build)
+**/*.md
+
+# scripts e configuracao que a imagem nao usa
+*.bat
+docker-compose.yaml
+Dockerfile
+.dockerignore
+sqlc.yml

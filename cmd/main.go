@@ -41,6 +41,16 @@ func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault((logger))
 
+	// pgxpool.NewWithConfig e preguicoso: monta o pool e nao abre conexao.
+	// Sem este Ping a API sobe com DSN errado, loga "Connected to database"
+	// e so falha requisicao por requisicao, com 500.
+	ctxPing, cancelarPing := context.WithTimeout(ctx, 5*time.Second)
+	defer cancelarPing()
+
+	if err := pool.Ping(ctxPing); err != nil {
+		logger.Error("nao conectou no banco", "error", err)
+		os.Exit(1)
+	}
 
 	logger.Info("Connected to database", "dsn", cfg.db.dsn)
 	jwtauth := jwtauth.New("HS256", []byte("secret"), nil)
