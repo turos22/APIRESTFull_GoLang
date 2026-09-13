@@ -29,8 +29,6 @@ services:
       timeout: 3s
       retries: 5
 
-  # Vida curta: aplica as migrations e morre com exit 0.
-  # A api e o worker esperam esse exit 0 para subir.
   migrate:
     build:
       context: .
@@ -48,8 +46,7 @@ services:
       target: api
     ports:
       - "8080:8080"
-    # Dentro da rede do compose o host e o NOME DO SERVICO e a porta e a
-    # interna: postgres:5432, nao localhost:5434.
+
     environment:
       GOOSE_DBSTRING: postgres://postgres:postgres@postgres:5432/api_ecom?sslmode=disable
       GOOSE_REDIS: redis:6379
@@ -62,7 +59,7 @@ services:
         condition: service_completed_successfully
     restart: unless-stopped
 
-  # Nao tem ports: ninguem conecta nele. Ele consome do Redis.
+  
   worker:
     build:
       context: .
