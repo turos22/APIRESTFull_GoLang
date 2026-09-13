@@ -147,19 +147,6 @@ Nenhuma rota autenticada recebe o id do usuário pela URL ou pelo corpo. Ele sai
 
 ---
 
-## ⚠️ Limitações conhecidas
-
-Nada disso é esquecimento — são coisas que identifiquei e decidi não resolver agora.
-
-- **Publicação na fila não é atômica com a transação.** O `XADD` vem depois do `COMMIT`; morrendo entre os dois, o pedido existe e nunca chega ao worker. A solução tem nome — *transactional outbox* — e não foi implementada.
-- **Sem chave de idempotência.** Clique duplo gera dois pedidos.
-- **Segredo do JWT fixo no código.** Precisa vir de variável de ambiente antes de qualquer uso real.
-- **Variáveis com nome herdado do goose.** A API lê `GOOSE_DBSTRING` e `GOOSE_REDIS`; o certo seria `DATABASE_URL` e `REDIS_ADDR`.
-- **N+1 na listagem de pedidos.** Uma consulta de itens por pedido.
-- **Sem métricas** e **sem orquestrador.** A aplicação está pronta para um (liveness e readiness separados, config por ambiente, `SIGTERM` tratado), mas rodou só em Compose.
-
----
-
 ## 📁 Estrutura
 
 ```
