@@ -161,3 +161,7 @@ internal/
 ```
 
 Divisão por entidade, com handler, service e DTO juntos, para manter próximo o que muda junto. O handler cuida de HTTP, o service cuida da regra e da transação, e o DTO existe para a forma da resposta não ser o schema da tabela.
+
+## Licença
+
+[MIT](LICENSE).
